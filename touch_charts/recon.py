@@ -84,6 +84,8 @@ class Engine():
 		iterations = 0
 		self.encoder.train()
 		for k, batch in enumerate(tqdm(data)):
+			gc.collect()
+			torch.cuda.empty_cache()
 			self.optimizer.zero_grad()
 
 			# initialize data
