@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0, "../")
 import utils
 import data_loaders
-
+import gc
 
 
 class Engine():
@@ -28,11 +28,13 @@ class Engine():
 		torch.cuda.manual_seed(args.seed)
 
 		# set initial data values
+		gc.collect()
+		torch.cuda.empty_cache()
 		self.epoch = 0
 		self.best_loss = 10000
 		self.args = args
 		self.last_improvement = 0
-		self.classes = ['0001', '0002']
+		self.classes = ['0003'] # ['0001', '0002']
 		self.checkpoint_dir = os.path.join('experiments/checkpoint/', args.exp_type, args.exp_id)
 		self.log_dir = f'experiments/results/{self.args.exp_type}/{self.args.exp_id}/'
 		if not os.path.exists(self.log_dir):
@@ -197,7 +199,7 @@ if __name__ == '__main__':
 	parser.add_argument('--epochs', type=int, default=300, help='Number of epochs to use.')
 	parser.add_argument('--lr', type=float, default=0.001, help='Initial learning rate.')
 	parser.add_argument('--eval', action='store_true', default=False, help='Evaluate the trained model on the test set.')
-	parser.add_argument('--batch_size', type=int, default=128, help='Size of the batch.')
+	parser.add_argument('--batch_size', type=int, default=32, help='Size of the batch.')
 	parser.add_argument('--num_samples', type=int, default=4000, help='Number of points in the predicted point cloud.')
 	parser.add_argument('--patience', type=int, default=70, help='How many epochs without imporvement before training stops.')
 	parser.add_argument('--loss_coeff', type=float, default=9000., help='Coefficient for loss term.')
