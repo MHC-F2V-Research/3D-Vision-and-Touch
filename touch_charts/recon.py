@@ -5,7 +5,7 @@
 #LICENSE file in the root directory of this source tree.
 
 import models
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 import torch
 import numpy as np
 import torch.optim as optim
@@ -44,7 +44,8 @@ class Engine():
 		self.encoder.cuda()
 		params = list(self.encoder.parameters())
 		self.optimizer = optim.Adam(params, lr=self.args.lr, weight_decay=0)
-		writer = SummaryWriter(os.path.join('experiments/tensorboard/', args.exp_type ))
+		#writer = SummaryWriter(os.path.join('experiments/tensorboard/', args.exp_type ))
+		writer = None
 
 		train_loader, valid_loaders = self.get_loaders()
 
@@ -106,7 +107,8 @@ class Engine():
 			tqdm.write(message)
 			iterations += 1.
 
-		writer.add_scalars('train', {self.args.exp_id: total_loss / iterations}, self.epoch)
+		if writer is not None:
+			writer.add_scalars('train', {self.args.exp_id: total_loss / iterations}, self.epoch)
 
 
 
@@ -153,7 +155,8 @@ class Engine():
 		print(f'Total validation loss: {total_loss}')
 		print('*******************************************************')
 		if not self.args.eval:
-			writer.add_scalars('valid', {self.args.exp_id: total_loss}, self.epoch)
+			if writer is not None:
+				writer.add_scalars('valid', {self.args.exp_id: total_loss}, self.epoch)
 		self.current_loss = total_loss
 
 	def save(self, label):
