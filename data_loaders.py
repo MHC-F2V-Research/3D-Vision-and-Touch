@@ -196,14 +196,15 @@ class mesh_loader_touch(object):
 
 
 
-		names = [[f.split('/')[-1], f.split('/')[-2]] for f in glob((f'{self.img_location}/*/*'))]
+		names = [[f.split('/')[-1], f.split('/')[-2]] for f in glob((f'{self.touch_location}/*/*'))]
 		self.names = []
 		import os
 		for n in tqdm(names):
 			if n[1] in classes:
 				if os.path.exists(self.surf_location + n[1]  + '/' + n[0] + '.npy'):
 					if os.path.exists(self.touch_location + n[1] + '/' + n[0]):
-						if self.produce_sheets or (n[0] + n[1]) in self.set_list[self.set_type]:
+						# so that it chooses the file 0003
+						if self.produce_sheets or (n[0] + n[1]) in self.set_list[self.set_type] or n[1] == '0003':
 							if produce_sheets:
 								for i in range(5):
 									for j in range(4):

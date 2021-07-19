@@ -253,6 +253,7 @@ class GCN_layer(nn.Module):
 		self.reset_parameters()
 
 	def reset_parameters(self):
+		#using the standard deviation
 		stdv = 6. / math.sqrt((self.weight1.size(1) + self.weight1.size(0)))
 		stdv *= .3
 		self.weight1.data.uniform_(-stdv, stdv)
@@ -261,9 +262,11 @@ class GCN_layer(nn.Module):
 	def forward(self, features, adj, activation):
 		# 0N-GCN definition, removes need for resnet layers
 		features = torch.matmul(features, self.weight1)
+		#if the tensors are 1D -> dot proudct
+		#if the tensors are 2D -> matrix-matrix product
+		#if 1st is 1D, and 2nd is 2D -> the 1st is prepended to its dimension and matrix multiplication and was removed after the operaton
+		#if 1st is 2D, and 2nd is 1D -> matrix-vector product is returned
 		output = torch.matmul(adj, features[:, :, :features.shape[-1] // 3])
 		output = torch.cat((output, features[:, :, features.shape[-1] // 3:]), dim=-1)
 		output = output + self.bias
 		return activation(output)
-
-

@@ -5,7 +5,7 @@
 #LICENSE file in the root directory of this source tree.
 
 import models
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 import torch
 import numpy as np
 import torch.optim as optim
@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0, "../")
 import utils
 import data_loaders
-
+import gc
 
 
 class Engine():
@@ -28,11 +28,16 @@ class Engine():
 		torch.cuda.manual_seed(args.seed)
 
 		# set initial data values
+		gc.collect()
+		torch.cuda.empty_cache()
+		# collecting the garbage
+
 		self.epoch = 0
 		self.best_loss = 10000
 		self.args = args
 		self.last_improvement = 0
-		self.classes = ['0001', '0002']
+		# using the 0003 dataset
+		self.classes = ['0003'] # ['0001', '0002']
 		self.checkpoint_dir = os.path.join('experiments/checkpoint/', args.exp_type, args.exp_id)
 		self.log_dir = f'experiments/results/{self.args.exp_type}/{self.args.exp_id}/'
 		if not os.path.exists(self.log_dir):
@@ -44,7 +49,8 @@ class Engine():
 		self.encoder.cuda()
 		params = list(self.encoder.parameters())
 		self.optimizer = optim.Adam(params, lr=self.args.lr, weight_decay=0)
-		writer = SummaryWriter(os.path.join('experiments/tensorboard/', args.exp_type ))
+		#writer = SummaryWriter(os.path.join('experiments/tensorboard/', args.exp_type ))
+		writer = None
 
 		train_loader, valid_loaders = self.get_loaders()
 
@@ -81,6 +87,9 @@ class Engine():
 		iterations = 0
 		self.encoder.train()
 		for k, batch in enumerate(tqdm(data)):
+			# collecting the garbage
+			gc.collect()
+			torch.cuda.empty_cache()
 			self.optimizer.zero_grad()
 
 			# initialize data
@@ -106,7 +115,8 @@ class Engine():
 			tqdm.write(message)
 			iterations += 1.
 
-		writer.add_scalars('train', {self.args.exp_id: total_loss / iterations}, self.epoch)
+		if writer is not None:
+			writer.add_scalars('train', {self.args.exp_id: total_loss / iterations}, self.epoch)
 
 
 
@@ -153,7 +163,8 @@ class Engine():
 		print(f'Total validation loss: {total_loss}')
 		print('*******************************************************')
 		if not self.args.eval:
-			writer.add_scalars('valid', {self.args.exp_id: total_loss}, self.epoch)
+			if writer is not None:
+				writer.add_scalars('valid', {self.args.exp_id: total_loss}, self.epoch)
 		self.current_loss = total_loss
 
 	def save(self, label):
@@ -194,7 +205,7 @@ if __name__ == '__main__':
 	parser.add_argument('--epochs', type=int, default=300, help='Number of epochs to use.')
 	parser.add_argument('--lr', type=float, default=0.001, help='Initial learning rate.')
 	parser.add_argument('--eval', action='store_true', default=False, help='Evaluate the trained model on the test set.')
-	parser.add_argument('--batch_size', type=int, default=128, help='Size of the batch.')
+	parser.add_argument('--batch_size', type=int, default=32, help='Size of the batch.')
 	parser.add_argument('--num_samples', type=int, default=4000, help='Number of points in the predicted point cloud.')
 	parser.add_argument('--patience', type=int, default=70, help='How many epochs without imporvement before training stops.')
 	parser.add_argument('--loss_coeff', type=float, default=9000., help='Coefficient for loss term.')
@@ -204,4 +215,3 @@ if __name__ == '__main__':
 
 	trainer = Engine(args)
 	trainer()
-

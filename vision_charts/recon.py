@@ -12,7 +12,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 import tensorflow as tf
 import tensorboard as tb
 from tqdm import tqdm
@@ -33,6 +33,10 @@ class Engine():
 		torch.cuda.manual_seed(args.seed)
 
 		# set initial data values
+		gc.collect()
+		torch.cuda.empty_cache()
+		# collecting the garbage
+
 		self.epoch = 0
 		self.best_loss = 10000
 		self.args = args
@@ -54,7 +58,7 @@ class Engine():
 		params = list(self.encoder.parameters())
 		self.optimizer = optim.Adam(params, lr=self.args.lr, weight_decay=0)
 
-		writer = SummaryWriter(os.path.join('experiments/tensorboard/', self.args.exp_type ))
+		# writer = SummaryWriter(os.path.join('experiments/tensorboard/', self.args.exp_type ))
 		train_loader, valid_loaders = self.get_loaders()
 
 		if self.args.eval:
@@ -91,6 +95,9 @@ class Engine():
 		iterations = 0
 		self.encoder.train()
 		for k, batch in enumerate(tqdm(data)):
+			# collecting the garbage
+			gc.collect()
+			torch.cuda.empty_cache()
 			self.optimizer.zero_grad()
 
 			# initialize data
@@ -229,4 +236,3 @@ if __name__ == '__main__':
 
 	trainer = Engine(args)
 	trainer()
-

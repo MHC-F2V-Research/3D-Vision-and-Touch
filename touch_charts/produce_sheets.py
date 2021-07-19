@@ -26,7 +26,11 @@ class Engine():
 		torch.manual_seed(args.seed)
 		torch.cuda.manual_seed(args.seed)
 
-		self.classes = ['0001', '0002']
+		gc.collect()
+		torch.cuda.empty_cache()
+		# collecting the garbage
+		
+		self.classes = '0003' #['0001', '0002']
 		self.args = args
 		self.verts, self.faces = utils.load_mesh_touch(f'../data/initial_sheet.obj')
 
@@ -123,10 +127,3 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	trainer = Engine(args)
 	trainer()
-
-
-
-
-
-
-

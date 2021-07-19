@@ -8,6 +8,9 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
+
+# CHANNEL IS THE DEPTH OF THE MATRICES INVOLVED IN THE CONVOLUTION
+
 # implemented from:
 # https://github.com/MicrosoftLearning/dev290x-v2/blob/master/Mod04/02-Unet/unet_pytorch/model.py
 # MIT License
@@ -19,6 +22,9 @@ class DoubleConv(nn.Module):
 		self.double_conv = nn.Sequential(
 			nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1),
 			nn.BatchNorm2d(mid_channels),
+			# batch normalization to  standardizes the inputs to a layer for each mini-batch,
+			# stabilizing the learning process and dramatically reducing the number of training epochs
+			# required to train deep networks.
 			nn.ReLU(inplace=True),
 			nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1),
 			nn.BatchNorm2d(out_channels),
@@ -30,11 +36,16 @@ class DoubleConv(nn.Module):
 # implemented from:
 # https://github.com/MicrosoftLearning/dev290x-v2/blob/master/Mod04/02-Unet/unet_pytorch/model.py
 # MIT License
+
+# basically down scaling the image
 class Down(nn.Module):
 	def __init__(self, in_channels, out_channels):
 		super().__init__()
 		self.maxpool_conv = nn.Sequential(
+			# square window of size 2
 			nn.MaxPool2d(2),
+			# down sampling an input representation, reducing its dimensionality
+			# and allowing for assumptions to be made about features contained in the sub-regions binned
 			DoubleConv(in_channels, out_channels)
 		)
 	def forward(self, x):
@@ -43,9 +54,13 @@ class Down(nn.Module):
 # implemented from:
 # https://github.com/MicrosoftLearning/dev290x-v2/blob/master/Mod04/02-Unet/unet_pytorch/model.py
 # MIT License
+
+# upscaling the image
 class Up(nn.Module):
 	def __init__(self, in_channels, out_channels):
 		super().__init__()
+		# 2D transposed convolution operator over an image composed of several input planes
+		# the gradient of conv2d with respect to its input
 		self.up = nn.ConvTranspose2d(in_channels , in_channels // 2, kernel_size=2, stride=2)
 		self.conv = DoubleConv(in_channels, out_channels)
 
@@ -98,6 +113,7 @@ class Encoder(nn.Module):
 		# define a plane of the same size, and shape at the touch sensor
 		width = .0218 - 0.00539
 		y_z = torch.arange(dim).cuda().view(dim, 1).expand(dim, dim).float()
+		#expand -> returns a new view with singleton dimensions expanded to larger size specified in the parameters (row, column)
 		y_z = torch.stack((y_z, y_z.permute(1, 0))).permute(1, 2, 0)
 		plane = torch.cat((torch.zeros(dim, dim, 1).cuda(), y_z), dim=-1)
 		self.orig_plane = (plane / float(dim) - .5) * width
@@ -107,8 +123,17 @@ class Encoder(nn.Module):
 		# reshape the plane to have the same position and orientation as the touch sensor when the touch occurred
 		batch_size = depths.shape[0]
 		planes = self.orig_plane.view(1 , -1 , 3).expand(batch_size, -1, 3)
+		#view -> returns a new tensor with the same data but of a different shape (shape is specified in the view arguments)
+		#size -1 is inferred from other dimensions so that the number of elements in the view matches the original number of elements
+		#so since dim = 100, then 100 /(1 * 3)
+		#only one dimension can inferred from the other dimensions
 		planes = torch.bmm(rot, planes.permute(0, 2, 1)).permute(0, 2, 1)
-		planes += pos.view(batch_size, 1, 3)
+		#rearranges the original tensor according to the desired ordering and returns a new multidimensional rotated tensor.
+		#where the parameters are the index of the size, so (0, 2, 1) means permute the planes into the shape of
+		#(size specified in index 0, size specified in index 2, size specified in index 1)
+		#rot -> rotation
+		#bmm -> batch matrix-matrix product of matrices stored in rot and planes.permute where both of them is a 3D tensor
+		planes += pos.view(batch_size, 1, 3) #pos -> position
 
 		# add the depth in the same direction as the normal of the sensor plane
 		init_camera_vector = torch.FloatTensor((1, 0, 0)).cuda().view(1, 3, 1) .expand(batch_size, 3, 1 )
@@ -172,13 +197,3 @@ class Encoder(nn.Module):
 
 
 		return pred_depth, pred_points
-
-
-
-
-
-
-
-
-
-
