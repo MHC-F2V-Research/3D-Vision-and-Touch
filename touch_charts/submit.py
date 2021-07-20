@@ -19,18 +19,3 @@ pbar = tqdm(pool.imap_unordered(call, commands_to_run), total=len(commands_to_ru
 pbar.set_description(f"calling submitit")
 for _ in pbar:
 	pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

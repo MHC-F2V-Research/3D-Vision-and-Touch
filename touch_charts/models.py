@@ -172,13 +172,3 @@ class Encoder(nn.Module):
 
 
 		return pred_depth, pred_points
-
-
-
-
-
-
-
-
-
-
